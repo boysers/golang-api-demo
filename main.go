@@ -1,44 +1,29 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"time"
+	"context"
+	"log"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	_ "github.com/lib/pq"
 )
 
-type user struct {
-	Name  string `json:"full_name"`
-	Email string `json:"email_address"`
-}
-
-type apiHandler struct{}
-
-func homeHandler(rw http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(rw, "Hello from Handler %s", req.URL)
-}
-
-// http.Handler
-func (apiHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	u := user{Name: "boysers le technicien", Email: "boysers@example.com"}
-	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(u)
-}
-
-func withlogger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(rw, req)
-		end := time.Since(start)
-		fmt.Printf("%s %s processing time %s\n", req.Method, req.URL, end)
-	})
-}
+var collection *mongo.Collection
+var ctx = context.TODO()
 
 func main() {
-	mux := http.DefaultServeMux
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	mux.Handle("/home", withlogger(http.HandlerFunc(homeHandler)))
-	mux.Handle("/api", withlogger(apiHandler{}))
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	http.ListenAndServe(":3000", mux)
+	collection = client.Database("tasker").Collection("tasks")
 }

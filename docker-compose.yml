@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+    bdd:
+      container_name: bdd-mongodb
+      image: mongo:5.0
+      restart: always
+      ports:
+        - "27017:27017"
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=boysers
+        - MONGO_INITDB_ROOT_PASSWORD=pass
+      volumes:
+        - bdd_data:/data/db
+
+volumes:
+  bdd_data:
